@@ -812,6 +812,28 @@ exports.signup = (req, res, next) => {
 Rappelez vous que dans le cas d'une authentification (signin) ou d'un enregistrement (signup) le serveur utilisera la fonction ci dessus pour envoyer au client son token. La vérification du token se fera via passport et plus précisément la stratégie jwt.
 Notez que nous reviendrons sur la fonction signin plus tard
 
+# Rappel sur le flux d'authentification
+
+Rappelons les différentes méthodes d'accès
+
+## INSCRIPTION
+* L'utilisateur envoi ses informations d'identification
+* Si l'utilisateur n'existe pas dans la base alors il est crée avec un mot de passe crypté via bcrypt
+* On retourne un Token signé avec la clé secrète du serveur
+
+## CONNEXION
+* L'utilisateur envoi ses informations d'identification
+* On utilise Passport et la stratégie local (couple username et password) pour vérifier l'identité de l'utilisateur
+* Le mot de passe soumis est crypté avec bcrypt et comparé avec le mot de passe en base de données
+* Si l'utilisateur est bien celui qu'il prétend être, on retourne un Token signé avec la clé secrète du serveur
+
+## ACCESS SECURISE
+* L'utilisateur envoi avec sa requête, le token reçu par le serveur
+* On utilise Passport et la stratégie JWT pour vérifier le token en se basant sur la clé secrète du serveur
+* Si le token est valide, l'utilisateur a accès à la ressource protégé
+
+Il est donc claire que nous devons passer à l'implémentation de Passport
+
 # Installation et configuration de passport et passport-jwt
 
 # Implementation de stratégies passport
