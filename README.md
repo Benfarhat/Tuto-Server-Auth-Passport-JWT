@@ -60,6 +60,8 @@ const port = process.env.port || 3000
 app.listen(port, '127.0.0.1',  () => { console.log('-=-=Server listening on port 3000=-=-')})
 ```
 
+Pour ceux qui ne le savent pas, une adresse IP (IP pour Internet protocole à comprendre "en langage Internet") est un identifiant d'ordinateur qui dans le cas des adresses IP dite V4 est formée de 4 numéros séparés par un point, chaque numéro pouvant aller de 0 à 255 (donc pas d'adresse du genre 5.10.3.<strike>`400`</strike>), internet aurait du mal a fonctionner sans ces identifiants. Nous ne les voyons pas car nous utilisons une sortes de format plus simple a apprendre comme pour nos téléphones, le repertoire interne de nos smartphones nous permet d'éviter le supplice d'apprendre des centaines de suites de chiffres. Dans le cas de l'Internet, les numéros de téléphones sont nos adresses IP, les noms de no contacts sont les adresses URL (du genre www.google.com) et le repertoire sont les serveurs DNS (Domaine Name Server) qui font la correspondance entre une adresse URL et une adresse IP
+
 **Un mot sur nodemon**
 
 [nodemon](https://github.com/remy/nodemon#nodemon) est un outil assez intéressant lors de vos developpement car il permet de relancer vos scripts à chaque modification mais également d'attendre une correction des fichiers qui pourraient avoir cause un crash de l'application, par défaut il suit (fonction de watch) les modifications de tous les fichiers du repertoire et des sous repertoires mais vous pouvez modifier son fonctionnement: `nodemon --watch models --watch libs controllers/authentication.js`, ou encore de choisir les extensions des fichiers à surveiller: `nodemon -e js,css,json`
@@ -85,6 +87,36 @@ PS D:\labs\Authentication\server> nodemon
 [nodemon] starting `node index.js`
 -=-=Server listening on port 3000=-=-
 ```
+
+#### Requêtes, méthodes et endpoint
+
+Ouvrons une lègre parenthèse en rappelant qu'il existe deux parties distinctes, celui qui demande une ressource (le `client`) et celui qui répond aux demandes (le `serveur`). Rappelez vous que dans ce tuto, nous développons notre serveur et sa façon de répondre aux demandes des utilisateurs.
+La demande est appelée requête (`request`) et la réponse tout simplement réponse (`response`).
+
+Lorsqu'on agit sur une `ressource` un seul élément est appelé `objet`, alors qu'un ensemble d'objets est nommé `collection`. Vis à vis de ces objets ou collections, il y a plusieurs intéractions possibles, voulons nous la consulter, la modifier, la supprimer, accéder à une objet ou toute la collection. cette information est possible dans le protocole HTTP grace aux `méthodes`. Mais la méthode en elle même ne sert pas à grand chose, c'est comme si on se présentais à la caisse d'un épicier et qu'on dise "donnez moi", l'épicier vous demandera forcément "quoi". Pour accéder à une ressources ou une collection il faut ajouter à la méthode  un point de connection `endpoint` appelé `URI` (Uniform Resource Identifier)
+
+| Méthodes | Opération | ressource | exemple de endpoint |
+|---|---|---|---|
+| GET | Lire / Lister | Collection | GET /users |
+| GET | Lire | Objet | GET /users/123 |
+| POST | Créer | Collection | POST /users |
+| PUT | Modifier entièrement | Objet | PUT /users/123 |
+| PATCH | Modifier partiellement | Objet | PATCH /users/123 |
+| DELETE | Supprimer | Objet | DELETE /users/123 |
+
+#### Un mot sur le routage
+
+Express nous permet de faciliter le traitement des requêtes grace au routage qui permet de dire pour chaque type de requête quelle fonction (handler en anglais) s'occupera de son traitement
+
+le format sera on ne peut plus simple:
+
+`APP.METHODES(ENDPOINT, HANDLER)`
+
+#### Notion de Middleware
+
+Il faut savoir qu'Express est un framework fonctionnel mais qui offre le juste minimal requis. Pour des opérations qui sortent du contexte du fonctionnement normal d'express (nous le verrons plus loin), il est possible d'insérer un module au milieu qui permet de faire un traitement en amont. Par exemple à l'entrée d'une grande banque, vous passerez par un premier portail dit de sécurité ou on vérifiera votre identité, si tout est en règle et après avoir noté l'heure de votre arrivée, vous passerez au second portail, par exemple celui de l'accueil qui vérifiera l'heure de votre rendez-vous, vous orientera et pourra éventuellement vérifier que vous avez bien tous les papiers necessaires pour le traitement de votre requête et les arrengera de manière a ce que le dossier soit présentable; Ensuite, vous pourrez accèder au bureau qui traitera réellement votre demande. Les deux premiers portails sont des middlewares, qui vu comme ca, ils semblent pénible, mais dites vous que ces middlewares offrent une grosse valeur ajoutée à la société (sécurité et organisation) mais également aux visiteurs (qui grace a se système se sentira également en sécurité et évitera les longues files d'attentes).  
+
+#### Exemples concrets avec Express
 
 Continuons dans nos requêtes gérées par express, si par exemple nous testons ceci:
 
@@ -514,7 +546,39 @@ PS D:\labs\Authentication\test> mongod
 ```
 Vous remarquerez que parmi les messages affichés plusieurs informations permette de vous renseigner sur le fait qu'il ne répond aux requêtes que locales (sur la même machine) et vous informe sur les démarches à faire pour étendre le "bind" du serveur. il vous renseigne également sur le répertoire utilisé pour la base de donnée et finalement vous donne le port d'écoute qui est `27017`
 
-Pour tester votre serveur il suffit sur une autre console lancer la commande mongo et exécuter quelques commandes comme suit:
+Remarque: Lors de la mise en place de votre serveur et le déploiement de votre application en production, de nombreuses opérations simples lors de l'installation vous seront demandées, comme par exemple l'ajout du dépot officiel (cas de ubuntu / debian) ou encore et surtout demander au service mongod de s'exécuter automatiquement lors du démarrage du serveur via la commande `systemctl`.
+
+Pour tester votre serveur il suffit sur une autre console lancer la commande mongo qui permet d'exécuter un shell javascript interactif appellé `mongo shell` et qui offre de nombreuses commandes dont les suivantes:
+
+| Commandes | fonctionnement |
+|---|---|
+| show dbs (ou sh dbs) | affiche la liste des bases de données |
+| use db1 | permet de se connecter à la base db1 |
+| db | affiche la base de données courante (sur laquelle nous sommes connectée) |
+| show collections | permet d'afficher les collections de la base courante |
+| db.collection1.find() | Affiche le contenu de la collection "collection1" |
+| db.collection1.find().pretty()) | même commande que la précédente mais avec un affiche plus "friendly" |
+| db.collection1.insert({username: 'test', password:'pwd'}) | permet d'inséré dans la collection "collection1" le document composé des champs "username" et "password" ainsi que de leur valeur |
+| db.collection1.find({ username: 'test1' }) | recherche dans la collection "collection1" de la base de donnée courante, le (ou les) document(s) ayant pour valeur de champ username "test1" |
+| db.collection1.renameCollection("col1") | Renomme la collection "collection1" en "col1" |
+| db.collection1.drop() | Supprime la collection "collection1" |
+| db.dropDatabase() | Supprime la base de données courante |
+| db.col1.find().sort({ username: 1 }) | Trie les documents de la collection "col1" en se basant sur le champ "username" |
+| db.col1.createIndex({ username: 1 }) | le champ "username" de la collection "col1" devient un index |
+| db.col1.getIndexes() | Fournit la liste des indexes de la collection "col1" |
+| db.serverStatus() | offre un ensemble d'informations sur le serveur |
+| db.serverStatus().storageEngine | renseigne sur le moteur de stockage utilisé |
+
+ET... cerise sur le gateau, puisque c'est un shell javascript, vous pouvez écrire des commandes proche du javascript comme celle ci:
+
+```
+> db.user.find().map(x => {return x.country})
+[ "tunisia", "spain", "canada", "france", "france" ]
+```
+La liste des commandes disponibles sont fournis en ajoutant `help()` au point recherché comme par exemple:
+`db.user.find().help()`
+
+A présent que nous avons vu quelques commandes, utilisons quelques une pour tester le fonctionnement de notre serveur. Noter qu'il existe un outil graphique simple d'utilisation appelé [Robo 3T](https://robomongo.org/download) (anciennement appelé robomongo)
 
 ```
 PS D:\labs\Authentication\test> mongo
