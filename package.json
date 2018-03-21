@@ -1,7 +1,7 @@
 {
-  "name": "test",
+  "name": "tutoriel-serveur-auth",
   "version": "0.0.1",
-  "description": "",
+  "description": "Mise en place d'un serveur API authentifié",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js"

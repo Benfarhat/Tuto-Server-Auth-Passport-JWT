@@ -3,8 +3,8 @@ const Authentication = require('./controllers/authentication')
 module.exports = app => {
     app.get('/', (req, res) => res.sendStatus(200)) // OK
     app.get('/api', (req, res) => res.sendStatus(401)) // Unauthorized
-    app.post('/signup', (req, res) => res.send('Sign Up'))
-    app.post('/signin', (req, res) => res.send('Sign In'))
+    app.post('/signup',  Authentication.signup)
+    app.post('/signin',  Authentication.signin)
 
 
     /*
