@@ -9,17 +9,24 @@ const app = express()
 
 const router = require('./router')
 
-
+/*
 // @see: https://developer.mozilla.org/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose
 // DB Setup
 //Set up default mongoose connection
-const mongoDBURL = 'mongodb://127.0.0.1/apiServer';
 mongoose.connect(mongoDBURL);
 //Get the default connection
 const db = mongoose.connection;
 //Bind connection to error event (to get notification of connection errors)
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
+*/
+
+const mongoDBURL = 'mongodb://127.0.0.1/apiServer';
+//mongoose.Promise = global.Promise;
+
+mongoose.connect(mongoDBURL)
+  .then(() =>  console.log(`connection to ${mongoDBURL} succesful`))
+  .catch((err) => console.error(err));
 
 // Middleware
 // -- Morgan
