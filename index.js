@@ -49,6 +49,24 @@ var errorLogStream = rfs('error.log', {
     path: logDirectory,
     maxFiles: 30
   })
+  
+/*
+  // Code de test des middlewares trouvés dans le tuto
+
+  var premierMiddleware = function (req, res, next) {
+    throw new Error('Une erreur est survenue!')
+    next();
+  };
+  
+  var secondeMiddleware = function (err, req, res, next) {
+    console.log(err);
+    next();
+  };
+  
+  
+  app.use(premierMiddleware);
+  app.use(secondeMiddleware);
+*/
 
 app.use(morgan('tiny', {
     skip: function (req, res) { return res.statusCode > 299 },

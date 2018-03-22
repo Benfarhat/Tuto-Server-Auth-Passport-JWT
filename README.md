@@ -1,4 +1,7 @@
 # Mise en place d'un serveur Authentifié
+
+Nous nous proposons dans ce tutoriel la mise en place pas à pas dans un premier temps d'un serveur d'API RESTs (REpresentational State Transfer) authentifié. Nous ajouterons dans une seconde étape la mise en place d'une serveur GraphQL
+
 ## Préparation du serveur
 Tout d'abord initialisons notre projet dans un répertoire vide
 ```
@@ -116,6 +119,90 @@ le format sera on ne peut plus simple:
 
 Il faut savoir qu'Express est un framework fonctionnel mais qui offre le juste minimal requis. Pour des opérations qui sortent du contexte du fonctionnement normal d'express (nous le verrons plus loin), il est possible d'insérer un module au milieu qui permet de faire un traitement en amont. Par exemple à l'entrée d'une grande banque, vous passerez par un premier portail dit de sécurité ou on vérifiera votre identité, si tout est en règle et après avoir noté l'heure de votre arrivée, vous passerez au second portail, par exemple celui de l'accueil qui vérifiera l'heure de votre rendez-vous, vous orientera et pourra éventuellement vérifier que vous avez bien tous les papiers necessaires pour le traitement de votre requête et les arrengera de manière a ce que le dossier soit présentable; Ensuite, vous pourrez accèder au bureau qui traitera réellement votre demande. Les deux premiers portails sont des middlewares, qui vu comme ca, ils semblent pénible, mais dites vous que ces middlewares offrent une grosse valeur ajoutée à la société (sécurité et organisation) mais également aux visiteurs (qui grace a se système se sentira également en sécurité et évitera les longues files d'attentes).  
 
+#### La fonction next()
+
+Plusieurs middleware successifs sont appelés pile (ou stack en anglais), lors de l'utilisation d'un middleware on a besoin de 3 paramètres:
+* La requête
+* La réponse
+* La fonction middleware suivante
+
+les paramètres peuvent avoir n'importe quel nom (valide bien sur), le premier est par convention nommé `req`, le second `res` et le troisième `next`
+Lorsqu'on appelle la fonction next() 
+Par exemple un simple middleware qui enregistrerais les connexions serait comme ceci
+
+```
+
+var express = require('express');
+var app = express();
+
+var enregistreConnection = function (req, res, next) {
+    console.log(`connexion detecté à partir de l'ip: ${req.ip} avec la méthode ${req.method}`);
+    next();
+};
+
+var secondeMiddleware = function (req, res, next) {
+    console.log('Je suis le seconde Middleware!');
+    next();
+};
+
+
+app.use(enregistreConnection);
+app.use(secondeMiddleware);
+
+app.get('/', function (req, res) {
+  res.send('Hello World!');
+});
+
+app.listen(3000);
+
+
+```
+En exécutant la commande curl (abréviation de Client URL Request Librairie) suivante: `curl -X GET -i 'http://127.0.0.1:3000'` (qui équivaut à consulter avec votre navigateur l'URL `http://127.0.0.1:3000`) on obtient sur la console du serveur les messages suivants:
+
+```
+connexion detecté à partir de l'ip: 127.0.0.1 avec la méthode GET
+Je suis le seconde Middleware!
+```
+
+Par contre si on enlève l'appel à la fonction next dans le premier middleware il n'y aura pas de passage aux middlewares suivants et seule la première ligne sera affichée.
+
+#### Gestion des erreurs (Error handling)
+
+Si un quatrième paramètre est appelé alors ce parmaètre représentera les éventuels erreurs, et se positionnera à la première position, nous aurons alors:
+
+```
+app.use((err, req, res, next) => {
+
+})
+```
+Le traitement des erreurs doit être au niveau du dernier middleware comme suit:
+
+```
+  var premierMiddleware = function (req, res, next) {
+    throw new Error('Une erreur est survenue!')
+    next();
+  };
+  
+  var secondeMiddleware = function (err, req, res, next) {
+    console.log(err);
+    next();
+  };
+  
+  
+  app.use(premierMiddleware);
+  app.use(secondeMiddleware);
+```
+
+Lors de l'accès à la racine nous obtenons les messages d'erreurs:
+
+```
+connection to mongodb://127.0.0.1/apiServer succesful
+Error: Une erreur est survenue!
+    at premierMiddleware (index.js:54:11)
+    at Layer.handle [as handle_request] (\node_modules\express\lib\router\layer.js:95:5)
+    ...
+```
+
 #### Exemples concrets avec Express
 
 Continuons dans nos requêtes gérées par express, si par exemple nous testons ceci:
@@ -153,13 +240,10 @@ en observant le contenu de `req` on ne trouve ni le contenu de username ou encor
 
 ### Body Parser
 
-#### Notion de middleware
-
-body-parser est un middleware, c'est à dire qu'il se positionnera en milieu de chemin entre le `requêteur` (client) et le `répondeur` (serveur), ce qui permettra ainsi de réaliser des opérations diverses et variées qui ne sont pas gérées par l'application en elle même mais qui également pourront l'en décharger. C'est comme si à l'entrée d'une université vous mettiez un agent qui déchargera l'établissement des opérations de sécurité en vérifiant si ceux qui se présente sont bien des étudiant, de noter le nom de toutes les personnes qui se présenteront aux portes de la faculté, etc....
 
 #### Fonctionnement
 
-body-parser va nous permettre d'intercepter les requêtes et extraire puis "parser" ou segmenter le contenu du flux reçu (le `stream`) pour remplir req.body avec les champs attendu.
+body-parser est un middleware qui va nous permettre d'intercepter les requêtes et extraire puis "parser" ou segmenter le contenu du flux reçu (le `stream`) pour remplir req.body avec les champs attendu.
 
 Concrêtement le middleware body-parser fonctionne comme suit et :
 
@@ -921,6 +1005,7 @@ Rappelons les différentes méthodes d'accès
 Il est donc claire que nous devons passer à l'implémentation de Passport
 
 # Installation et configuration de passport et passport-jwt
+
 
 # Implementation de stratégies passport
 
