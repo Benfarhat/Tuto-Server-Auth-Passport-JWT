@@ -4,9 +4,11 @@ const morgan = require('morgan')
 const fs = require('fs')
 const rfs = require('rotating-file-stream')
 const path = require('path')
-const app = express()
-const router = require('./router')
 const mongoose = require('mongoose')
+const app = express()
+
+const router = require('./router')
+
 
 // @see: https://developer.mozilla.org/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose
 // DB Setup

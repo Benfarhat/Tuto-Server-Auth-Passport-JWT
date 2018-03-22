@@ -60,7 +60,7 @@ const port = process.env.port || 3000
 app.listen(port, '127.0.0.1',  () => { console.log('-=-=Server listening on port 3000=-=-')})
 ```
 
-Pour ceux qui ne le savent pas, une adresse IP (IP pour Internet protocole à comprendre "en langage Internet") est un identifiant d'ordinateur qui dans le cas des adresses IP dite V4 est formée de 4 numéros séparés par un point, chaque numéro pouvant aller de 0 à 255 (donc pas d'adresse du genre 5.10.3.<strike>`400`</strike>), internet aurait du mal a fonctionner sans ces identifiants. Nous ne les voyons pas car nous utilisons une sortes de format plus simple a apprendre comme pour nos téléphones, le repertoire interne de nos smartphones nous permet d'éviter le supplice d'apprendre des centaines de suites de chiffres. Dans le cas de l'Internet, les numéros de téléphones sont nos adresses IP, les noms de no contacts sont les adresses URL (du genre www.google.com) et le repertoire sont les serveurs DNS (Domaine Name Server) qui font la correspondance entre une adresse URL et une adresse IP
+Pour ceux qui ne le savent pas, une adresse IP (IP pour Internet protocole à comprendre "en langage Internet") est un identifiant d'ordinateur qui dans le cas des adresses IP dite V4 est formée de 4 numéros séparés par un point, chaque numéro pouvant aller de 0 à 255 (donc pas d'adresse du genre 5.10.3.<strike>400</strike>), Internet aurait du mal a fonctionner sans ces identifiants. Nous ne les voyons pas car nous utilisons une sortes de format plus simple à apprendre comme pour nos téléphones, le repertoire interne de nos smartphones nous permet d'éviter le supplice d'apprendre des centaines de suites de chiffres. Dans le cas de l'Internet, les numéros de téléphones sont nos adresses IP, les noms de no contacts sont les adresses URL (du genre www.google.com) et le repertoire sont les serveurs DNS (Domaine Name Server) qui font la correspondance entre une adresse URL et une adresse IP
 
 **Un mot sur nodemon**
 
@@ -195,7 +195,7 @@ app.use(express.json())
 
 ### morgan
 
-Vu que nous allons mettre en place un serveur, il faut de préférence avoir un logger qui permettra d'avoir accès à toutes les requêtes selon plusieurs formats, il s'agit d'un middleware qui s'utilise comme suit `app.use(morgan(FORMAT DU LOG))`, par exemple:
+Vu que nous allons mettre en place un serveur, il faut de préférence avoir un logger (journal d'évènements) qui permettra d'avoir accès à toutes les requêtes selon plusieurs formats, il s'agit d'un middleware qui s'utilise comme suit `app.use(morgan(FORMAT DU LOG))`, par exemple:
 
 ```
 app.use(morgan('short'))
@@ -218,13 +218,13 @@ Notez précédemment que POST désigne la méthode `:method`, /testMorgan repré
 Nous pouvons crée notre format de log personalisé
 morgan(':method :url :status :res[content-length] - :response-time ms')
 
-Faisons un test avec les lignes suivantes:
+Faisons un test avec le format suivant:
 
 ```
 app.use(morgan(':date[clf]: Accès en :method sur :url avec le code :status répondu en :response-time ms'))
 ```
 
-Nous obtenons le log suivant:
+Nous obtenons ce message de log:
 
 ```
 20/Mar/2018:14:04:27 +0000: Accès en GET sur /testMorgan avec le code
@@ -306,8 +306,8 @@ Pour que Git ne suivent pas les fichiers de logs, il faut rajouter le nom du rep
 
 # Gestion des routes 
 
-Nous avons vu précédemment que le serveur répondais à certaines méthodes pour certaines URL, c'est ce qu'on appelles les routes, nous allons extériorisés nos routes dans un fichiers à part à savoir: router.js
-l'import et l'export se fera au format common js et non es6, notre version de node ne gérant pas encore 
+Nous allons extériorisés nos routes dans un fichiers à part à savoir: router.js
+l'import et l'export se fera au format common js et non es6, notre version de node ne gérant pas encore la nouvelle syntaxe des imports
 
 ## import et export
 ### Syntaxe ES6:
@@ -427,21 +427,30 @@ module.exports = app => {
 
 # Mise en place du schéma et du model
 
+Pour cela nous allon utilisé MongoDB et comme module, l'incontournable mongoose pour lequel certaines doit être connues:
+
+* Schema: Le schéma permet de décrire les types de données, les contraintes (unique, minuscule, requis) et les élèments de validation. Tout ceci se passe à un niveau applicatif puisque mongoDB n'a aucun soucis, en effet comme nous le verrons à la prochaine sous section, MongoDB a un schéma flexible et dynamique d'une enregistrement à un autre, il peut y avoir des champs complétement différents,
+* Model: Le modèle va nous permettre en nous basant sur le schéma  défini, de faire des requêtes dans MongoDB, si une collection n'existe pas (ou une base de donnée), la collection (et éventuellement la base de données) sera créer lors de la première insertion,
+* Document: Lorsqu'un objet est crée ou requêté via une instance du modèle, on parle de document, par exemple lors de l'insertion d'un nouvel utilisateur dans la collection "users", l'utilisateur a insérer avec toutes ses propriétés est appelé "document".
+
 ## Notion NoSQL
 
 NoSQL ne veut pas dire, <strike>Pas de SQL</strike> mais plutot `SQL et autres` (Not Only SQL).
-Pour comparer avec une base de données relationnels sachez d'abord qu'en Mo,goDB, le schema n'est pas statique mais dynamic, c'est à dire que d'une sauvegarde à une autre, si un élement venait à manquer, MongoDB ne le bloquera pas et permettra la sauvegarde, c'est à vous de faire ce controle en amont.
-Voici une analogie SQL / MongoDB:
+Pour comparer avec une base de données relationnels sachez d'abord qu'en MongoDB, le schema n'est pas statique mais dynamic, c'est à dire que d'une sauvegarde à une autre, si un élement venait à manquer, MongoDB ne le bloquera pas et permettra la sauvegarde, c'est à vous de faire ce controle en amont.
+Voici une analogie entre un système de base de données relationnelle (RDBMS) et MongoDB:
 
-| SQL | MongoDB |
+| RDBMS | MongoDB |
 |---|---|
 | Base de données  | Base de données |
 | Table | Collection |
-| Colonne | Field / Champ |
+| Tuple | Document |
+| Champ | propriété |
 | Index | Index |
 | Jointure | population ou inclusion directe (imbrication) |
 
 Notez également qu'il existe un champ _id qui est l'identifiant de chaque document, l'ajout d'un index permet d'avoir des requêtes à la base de donnée traitées plus efficacement et sans avoir à analyser une collection. Il faut bien sur que cet index soit approprié, par exemple mettre comme index la date de naissance de la `collection` des étudiants, n'aurait aucune utilité
+
+## Principe 
 
 ## Champs du schema
 
@@ -470,6 +479,18 @@ const userSchema = new Schema({
     password: String
 })
 ```
+
+Notez qu'il vous est possible de rajouterun message d'erreur a chaque restriction non respecté comme suit:
+```
+// ...
+const userSchema = new Schema({
+    username:{
+        type: String,
+        unique: [true, 'Cet identifiant existe déjà']
+// ...
+```
+Plus d'infos sont disponible [ici](http://mongoosejs.com/docs/validation.html)
+
 Créons à présent le `model` qui permettra d'effectuer des opérations sur les documents d'une collections d'une base de données, comme des requetes de selection, d'insertion, de suppression et bien d'autres encore, puisqu'il existe également des hooks (ou point d'ancrage) qui permettent d'intervenir a tous les niveaux (avant et après) d'une requêtes (nous verrons cela lors du cryptage du mot de passe).
 Le model est un constructeur 
 
@@ -478,13 +499,13 @@ Le model est un constructeur
 module.exports = mongoose.model('user', userSchema)
 ```
 
-La collection sera automatiquement la version plurielle du nom du model, dans ce cas ci le nom est `user`, le nom de la collection sera `users`
+La collection sera automatiquement la version plurielle du nom du model, dans ce cas ci le nom donné au model étant `user`, la collection se nommera `users`
 
 # Implementation de l'enregistrement d'un nouvel utilisateur
 
 ## Modification des routes
 
-Modifions notre dernière route pour qu'elle soit traité par l'action signup d'un nouveau controleur (le fichiers controllers/authentication.js) et signin par l'action signin comme suit:
+Modifions notre dernière route pour qu'elle soit traitée par l'action signup d'un nouveau controleur (le fichiers controllers/authentication.js) et signin par l'action signin comme suit:
 
 ```
 exports.signin = (req, res, next) => {
