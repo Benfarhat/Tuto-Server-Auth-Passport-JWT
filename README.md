@@ -505,7 +505,7 @@ La collection sera automatiquement la version plurielle du nom du model, dans ce
 
 ## Modification des routes
 
-Modifions notre dernière route pour qu'elle soit traitée par l'action signup d'un nouveau controleur (le fichiers controllers/authentication.js) et signin par l'action signin comme suit:
+Modifions notre dernière route pour qu'elle soit traitée par l'action signup d'un nouveau controleur (le fichiers `controllers/authentication.js`) et signin par l'action signin comme suit:
 
 ```
 exports.signin = (req, res, next) => {
@@ -526,7 +526,7 @@ app.post('/signin',  Authentication.signin)
 Vérifions à présent avec notre client Rest préféré que le résultat est bien celui escompté, c'est à dire afficher le nom de l'action en cours
 
 ## Récupération des identifiants
-Modifions notre actions signup dans le controleur Authentification pour récupérer, les identifiants username et password, en nous rappelant de controler leur présence. Cette vérification peut être fait au niveau du schéma mais à quoi bon solliciter la base de donnée si ce contrôle peut être fait en amont.
+Modifions notre action signup dans le controleur Authentification pour récupérer les identifiants username et password, en vérifiant d'abord qu'ils ont bien été renseignés. Cette vérification peut être fait au niveau du schéma mais à quoi bon solliciter la base de donnée si ce contrôle peut être réalisé en amont.
 
 ```
 exports.signup = (req, res, next) => {
@@ -593,10 +593,11 @@ Pour tester votre serveur il suffit sur une autre console lancer la commande mon
 ET... cerise sur le gateau, puisque c'est un shell javascript, vous pouvez écrire des commandes proche du javascript comme celle ci:
 
 ```
-> db.user.find().map(x => {return x.country})
+> db.user.find().map(u => {return u.country})
 [ "tunisia", "spain", "canada", "france", "france" ]
 ```
-La liste des commandes disponibles sont fournis en ajoutant `help()` au point recherché comme par exemple:
+La liste des commandes disponibles est fournie en ajoutant `help()` au point recherché comme par exemple:
+
 `db.user.find().help()`
 
 A présent que nous avons vu quelques commandes, utilisons quelques une pour tester le fonctionnement de notre serveur. Noter qu'il existe un outil graphique simple d'utilisation appelé [Robo 3T](https://robomongo.org/download) (anciennement appelé robomongo)
