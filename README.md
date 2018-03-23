@@ -1137,3 +1137,76 @@ const localLogin = new LocalStrategy((username, password, done) => {
 
 ```
 
+## La stratégie passport jwt
+
+Dans `services/passport.js`, nous allons rajouter la stratégie jwt en utilisant JwtStrategy qui fonctionne avec des options dont les plus intéressantes sont:
+
+* secretOrKey est une chaîne ou un tampon contenant la clé publique secrète (symétrique) ou codée PEM (asymétrique) pour vérifier la signature du jeton. OBLIGATOIRE sauf si secretOrKeyProvider est fourni.
+* secretOrKeyProvider est un rappel dans la fonction de format secretOrKeyProvider (request, rawJwtToken, done), qui doit être fait avec une clé publique secrète ou codée PEM (asymétrique) pour la combinaison donnée de clé et de requête. done accepte les arguments dans la fonction de format done (err, secret). Notez que c'est à l'implémenteur de décoder rawJwtToken. OBLIGATOIRE sauf si secretOrKey est fourni.
+* jwtFromRequest (OBLIGATOIRE) Fonction qui accepte une requête comme seul paramètre et renvoie soit le JWT sous forme de chaîne, soit null. Elle permet l'extraction du JWT selon l'une des possibilités suivantes:
+    * fromHeader (header_name) crée un nouvel extracteur qui recherche le JWT dans l'en-tête http donné
+    * fromBodyField (field_name) crée un nouvel extracteur qui recherche le JWT dans le champ de corps donné. Vous devez avoir un analyseur de corps (body-parser) configuré pour utiliser cette méthode.
+    * fromUrlQueryParameter (param_name) crée un nouvel extracteur qui recherche le JWT dans le paramètre de requête d'URL donné.
+    * fromAuthHeaderWithScheme (auth_scheme) crée un nouvel extracteur qui recherche le JWT dans l'en-tête d'autorisation, en attendant que le schéma corresponde à auth_scheme.
+    * fromAuthHeaderAsBearerToken () crée un nouvel extracteur qui recherche le JWT dans l'en-tête d'autorisation avec le schéma 'support'
+    * fromExtractors ([tableau des fonctions d'extraction]) crée un nouvel extracteur en utilisant un tableau d'extracteurs fourni. Chaque extracteur est tenté dans l'ordre jusqu'à ce que l'on renvoie un jeton.
+* algorithmes: Liste des chaînes avec les noms des algorithmes autorisés. Par exemple, ["HS256", "HS384"].
+* ignoreExpiration: si vrai, ne valide pas l'expiration du jeton.
+* passReqToCallback: Si la valeur est true, la demande sera transmise au rappel de vérification. c'est-à-dire vérifier (demande, jwt_payload, done_callback).
+
+En ce qui nous concerne nous aurons besoin de deux paramètres seulement:
+
+
+```
+ Setup options for JWT Strategy
+const jwtOptions = {
+    secretOrKey: config.secret,
+    jwtFromRequest: ExtractJwt.fromHeader('authorization')
+}
+
+```
+
+ainsi le code de la partie jwtStrategy sera très similaire à celle de la stratégie local, par contre nous ne fournissons plus les paramètres d'authentification, mais un token qui sera ajouté à toutes les requêtes, dans l'élèment authorization, a partir de ce token, la stratégie pourra dans un premier temps valider le token puis en extraire l'utilisateur puisque dans le champs sub (subject) du token nous avons mis l'ObjectID (identifiant MongoDB) de l'utilisateur, rappelez vous que nous ne devons pas mettre de données sensibles sinon nous devrions utiliser jwe qui permet le cryptage de ces données sensibles.
+
+```
+const passport = require('passport')
+const LocalStrategy = require('passport-local') 
+
+const JwtStrategy = require('passport-jwt').Strategy
+const ExtractJwt = require('passport-jwt').ExtractJwt
+
+const User = require('../models/user')
+const config = require('../config')
+
+// ...
+
+const jwtOptions = {
+    secretOrKey: config.secret,
+    jwtFromRequest: ExtractJwt.fromHeader('authorization')
+}
+
+
+const jwtLogin = new JwtStrategy(jwtOptions, (payload, done) => {
+    User.findById(payload.sub, (err, user) => {
+        if (err) { return done(err, false) }
+
+        if(user) {
+            done(null, user) 
+        } else {
+            done(null, false) 
+        }
+    })
+
+})
+
+passport.use(jwtLogin)
+
+```
+
+Un petit test nous permet de voir que cela fonctionne. Vous devez juste créer un utilisateur via l'endpoint signup en méthode POST, puis revenir vers l'endpoint /api en méthode GET, rajouter l'entête autorization et y coller le token reçu.
+
+Avec la commande cURL cela reviendrait a ceci:
+`curl -X GET -H 'authorization: VOTRE_TOKEN' -i http://localhost:3000/api`
+
+Et voila notre serveur est fini!
+
