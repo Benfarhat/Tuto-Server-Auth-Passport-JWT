@@ -842,7 +842,7 @@ userSchema.pre('save', function(next) {
   });
 
 ```
-
+Notez que nous retrouvons le fameux next qui rappelons le est un nom choisis par convention qui permet de dire "poursuit ton chemin avec les changement que j'ai apporté".
 Testons l'enregistrement d'un nouvel utilisateur et observons le document crée dans la collection `users`:
 
 ```
@@ -986,12 +986,12 @@ Notez que nous reviendrons sur la fonction signin plus tard
 
 Rappelons les différentes méthodes d'accès
 
-## INSCRIPTION
+## INSCRIPTION / REGISTER
 * L'utilisateur envoi ses informations d'identification
 * Si l'utilisateur n'existe pas dans la base alors il est crée avec un mot de passe crypté via bcrypt
 * On retourne un Token signé avec la clé secrète du serveur
 
-## CONNEXION
+## CONNEXION / LOGIN
 * L'utilisateur envoi ses informations d'identification
 * On utilise Passport et la stratégie local (couple username et password) pour vérifier l'identité de l'utilisateur
 * Le mot de passe soumis est crypté avec bcrypt et comparé avec le mot de passe en base de données
@@ -1002,13 +1002,138 @@ Rappelons les différentes méthodes d'accès
 * On utilise Passport et la stratégie JWT pour vérifier le token en se basant sur la clé secrète du serveur
 * Si le token est valide, l'utilisateur a accès à la ressource protégé
 
-Il est donc claire que nous devons passer à l'implémentation de Passport
+Nous avons fini la partie inscription  il nous reste a sécurisé les deux routes restantes
 
 # Installation et configuration de passport et passport-jwt
 
+Dans le fichier router.js nous allons insérer l'appel à passport qui se résume à appelé passport.authenticate(à et de spécifier quelle stratégie vous voulez utiliser et éventuellement ajouter quelques configurations.
 
-# Implementation de stratégies passport
+### Sessions
 
-# Comparaison d'un mot de passe en clair et d'un mot de passe crypté
+Les sessions sont intéréssantes lorsqu'un utilisateur accède à un site via un navigateur, mais dans le cas d'un serveur API, les sessions sont inutiless donc nous les désactiveront
 
-# Implementation de l'authentification
+
+### Stratégies
+
+Les stratégies passport sont des packages qui permettent de dire comment s'authentifier. il existe plusieurs centaines de stratégie, dont les plus connus sont: 
+
+* Local (en utilisant la combinaison de deux élements comme c'est le cas ici avec le username et le mot de passe)
+* jwt (avec l'utilisation de jeton)
+* Google
+* Facebook
+* Twitter
+* Github
+
+Tout le monde peut faire sa propre stratégie et la publier si elle est susceptible d'être utilisé par le public, on trouve des stratégies pour des solutions comme IBM, spotify, mailchimp, mixcloud, cisco, slack, ...
+Pour cela le module passport-strategy offre une API permettant d'en créer mais éventuellement de les maitriser en lisant le contenu. 
+Par exemple une stratégie a un nom par défaut, dans notre cas nous utiliserons local et jwt, mais il est possible de les renommer en utilisant un nom optionnel, en effet pour chaque stratégie il faut réecrire la méthode authenticate et déecrire le mécanisme d'authentification.
+Il est intéréssant de connaitre les méthodes suivante:
+
+* Strategy.success(user, info): Pour authentifier l'utilisateur avec succès
+* Strategy.fail(challenge, status): Pour faire échouer une authentification (status à 401)
+* Strategy.redirect(url, status): Pour rediriger faire un système d'authentification tierce (status à 302)
+* Strategy.pass(): Pour court-circuiter l'authentification dans le cas ou par exemple la session d'authentification est encore valide
+* Strategy.error(err): A utiliser en cas d'erreur
+
+conformément a ce qui a été dit voici nos nouvelles routes:
+
+```
+const Authentication = require('./controllers/authentication')
+
+module.exports = app => {
+    app.get('/', (req, res) => res.sendStatus(200)) // OK
+    app.post('/signup',  Authentication.signup)
+    app.post('/signin', passport.authenticate('local', { session: false }),  Authentication.signin)
+    app.get('/api', passport.authenticate('jwt', { session: false }), (req, res) => res.send("Secured Area")) // Unauthorized
+}
+```
+
+A présent nous devons décrire nos deux stratégies: "local" et par token web json ("jwt")
+
+## La stratégie passport local
+Nous allons mettre nos stratégies dans le fichier `services/passport.js`, commençons par la stratégie locale pour l'accès à la méthode `Authentication.signin`
+
+```
+const passport = require('passport')
+const LocalStrategy = require('passport-local') 
+const User = require('../models/user')
+
+const localLogin = new LocalStrategy(function(username, password, done) {
+    console.log(username, password)
+    // Notre logique d'authentification
+    return done(null, false)
+})
+```
+
+Il est possible par exemple de changer leschamps par défaut comme ci (cas ou à la place de username nous avons email)
+
+```
+const passport = require('passport')
+const LocalStrategy = require('passport-local') 
+const User = require('../models/user')
+
+const localOptions = {
+    usernameField: 'email', // default to 'username'
+    passwordField: 'password' // default to 'password'
+}
+
+const localLogin = new LocalStrategy(localOptions, function(email, password, done) {
+    console.log(email, password)
+    return done(null, false)
+})
+```
+A présent, notre logique consiste à faire ceci:
+
+1. Verifier dans la base de donnée si l'utilisateur existe
+    * Si non on retourne false
+    * Si oui on continue
+2.  Comparer le mot de passe en base de donné avec la version cryptée du mot de passe proposé
+    * Si ca ne correspond pas on retourne false
+    * Si cela correpond on retourne l'utilisateur
+
+### Comparaison d'un mot de passe en clair et d'un mot de passe crypté
+
+Pour comparer les mots de passe, nous allons rajouter une méthode au model User dans laquel nous utiliserons tout simplement la méthode [compare](https://www.npmjs.com/package/bcrypt#to-check-a-password) de bcrypt, nous avons donc dans `models/use.js`
+
+```
+userSchema.methods.comparePassword = function(candidatePassword, callback) {
+
+    bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
+        if (err) { return callback(err) }
+        return callback(null, isMatch)
+    })
+}
+```
+
+### Implementation finale de la stratégie localee
+
+A présent voici le code complet pour l'authentification avec stratégie locale
+
+```
+const localLogin = new LocalStrategy((username, password, done) => {
+    // On vérifie si l'utilisateur existe
+    User.findOne({ username }, (err, user) => {
+        // Si il y a une erreur
+        if (err) { return done(err, false) }
+
+        // Si l'utilisateur n'existe pas
+        if(!user) {
+            done(null, false)
+        } else {
+            // Si il exise on compare les mot de passe
+            user.comparePassword(password, function(err, isMatch) {
+                // Si il y a une erreur
+                if(err) { return done(err) }
+                // Si le mot de passe ne correspondent pas
+                if(!isMatch) { return done(null, false) }
+
+                // Sinon tout est ok!
+                return done(null, user)
+            })
+        }
+    })
+
+})
+
+```
+

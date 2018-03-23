@@ -31,7 +31,14 @@ userSchema.pre('save', function(next) {
     })
   });
 
+userSchema.methods.comparePassword = function(candidatePassword, callback) {
+    // @see: https://www.npmjs.com/package/bcrypt#to-check-a-password
 
+    bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
+        if (err) { return callback(err) }
+        return callback(null, isMatch)
+    })
+}
 
 // Create model
 module.exports = mongoose.model('User', userSchema)
