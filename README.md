@@ -56,7 +56,7 @@ Nous nous proposons dans ce tutoriel la mise en place pas à pas dans un premier
         - [Stratégies](#strat%C3%A9gies)
     - [La stratégie passport local](#la-strat%C3%A9gie-passport-local)
         - [Comparaison d'un mot de passe en clair et d'un mot de passe crypté](#comparaison-dun-mot-de-passe-en-clair-et-dun-mot-de-passe-crypt%C3%A9)
-        - [Implementation finale de la stratégie localee](#implementation-finale-de-la-strat%C3%A9gie-localee)
+        - [Implémentation finale de la stratégie locale](#impl%C3%A9mentation-finale-de-la-strat%C3%A9gie-locale)
     - [La stratégie passport jwt](#la-strat%C3%A9gie-passport-jwt)
 
 ## Préparation du serveur
@@ -1072,7 +1072,7 @@ Les sessions sont intéréssantes lorsqu'un utilisateur accède à un site via u
 
 ### Stratégies
 
-Les stratégies passport sont des packages qui permettent de dire comment s'authentifier. il existe plusieurs centaines de stratégie, dont les plus connus sont: 
+Les stratégies passport sont des packages qui permettent de dire comment s'authentifier. il existe plusieurs centaines de stratégie, dont les plus connues sont: 
 
 * Local (en utilisant la combinaison de deux élements comme c'est le cas ici avec le username et le mot de passe)
 * jwt (avec l'utilisation de jeton)
@@ -1081,18 +1081,17 @@ Les stratégies passport sont des packages qui permettent de dire comment s'auth
 * Twitter
 * Github
 
-Tout le monde peut faire sa propre stratégie et la publier si elle est susceptible d'être utilisé par le public, on trouve des stratégies pour des solutions comme IBM, spotify, mailchimp, mixcloud, cisco, slack, ...
-Pour cela le module passport-strategy offre une API permettant d'en créer mais éventuellement de les maitriser en lisant le contenu. 
-Par exemple une stratégie a un nom par défaut, dans notre cas nous utiliserons local et jwt, mais il est possible de les renommer en utilisant un nom optionnel, en effet pour chaque stratégie il faut réecrire la méthode authenticate et déecrire le mécanisme d'authentification.
+Tout le monde peut faire sa propre stratégie et la publier si elle est susceptible d'être utilisée par le public, on trouve des stratégies pour des solutions comme IBM, spotify, mailchimp, mixcloud, cisco, slack, ...
+Pour cela le module passport-strategy offre une API permettant d'en créer, notez qu'une stratégie a un nom par défaut, dans notre cas nous utiliserons local et jwt, mais il est possible de les renommer en utilisant un nom optionnel, en effet pour chaque stratégie il faut réecrire la méthode authenticate et déecrire le mécanisme d'authentification. Si jamais pour une même stratégie (par exemple locale) vous désirez avoir deux types d'authentification (disons un qui se base sur l'adresse email et qui avant vérifie si l'email est valide et un autre qui se base sur le username avec un mot de passe qui au lieu d'utiliser un hashage Bcrypt utiliserais une solution propriétaire), alors vous pourrez dans ce cas, bien que vous utilisiez la même stratégie de base, modifier le nom par défaut pour les différencier lors de l'appel.
 Il est intéréssant de connaitre les méthodes suivante:
 
 * Strategy.success(user, info): Pour authentifier l'utilisateur avec succès
-* Strategy.fail(challenge, status): Pour faire échouer une authentification (status à 401)
+* Strategy.fail(challenge, status): Pour faire échouer une authentification (status à 401) à utiliser par exemple si l'accès se fait via une adresse ip bannie.
 * Strategy.redirect(url, status): Pour rediriger faire un système d'authentification tierce (status à 302)
 * Strategy.pass(): Pour court-circuiter l'authentification dans le cas ou par exemple la session d'authentification est encore valide
 * Strategy.error(err): A utiliser en cas d'erreur
 
-conformément a ce qui a été dit voici nos nouvelles routes:
+conformément à ce qui a été dit voici nos nouvelles routes:
 
 ```
 const Authentication = require('./controllers/authentication')
@@ -1122,7 +1121,7 @@ const localLogin = new LocalStrategy(function(username, password, done) {
 })
 ```
 
-Il est possible par exemple de changer leschamps par défaut comme ci (cas ou à la place de username nous avons email)
+Il est possible par exemple de changer les champs par défaut (cas ou à la place de username nous avons email)
 
 ```
 const passport = require('passport')
@@ -1162,7 +1161,7 @@ userSchema.methods.comparePassword = function(candidatePassword, callback) {
 }
 ```
 
-### Implementation finale de la stratégie localee
+### Implémentation finale de la stratégie locale
 
 A présent voici le code complet pour l'authentification avec stratégie locale
 
@@ -1196,7 +1195,7 @@ const localLogin = new LocalStrategy((username, password, done) => {
 
 ## La stratégie passport jwt
 
-Dans `services/passport.js`, nous allons rajouter la stratégie jwt en utilisant JwtStrategy qui fonctionne avec des options dont les plus intéressantes sont:
+Dans `services/passport.js`, nous allons ajouter la stratégie jwt en utilisant JwtStrategy qui fonctionne avec des options dont les plus intéressantes sont:
 
 * secretOrKey est une chaîne ou un tampon contenant la clé publique secrète (symétrique) ou codée PEM (asymétrique) pour vérifier la signature du jeton. OBLIGATOIRE sauf si secretOrKeyProvider est fourni.
 * secretOrKeyProvider est un rappel dans la fonction de format secretOrKeyProvider (request, rawJwtToken, done), qui doit être fait avec une clé publique secrète ou codée PEM (asymétrique) pour la combinaison donnée de clé et de requête. done accepte les arguments dans la fonction de format done (err, secret). Notez que c'est à l'implémenteur de décoder rawJwtToken. OBLIGATOIRE sauf si secretOrKey est fourni.
@@ -1223,7 +1222,7 @@ const jwtOptions = {
 
 ```
 
-ainsi le code de la partie jwtStrategy sera très similaire à celle de la stratégie local, par contre nous ne fournissons plus les paramètres d'authentification, mais un token qui sera ajouté à toutes les requêtes, dans l'élèment authorization, a partir de ce token, la stratégie pourra dans un premier temps valider le token puis en extraire l'utilisateur puisque dans le champs sub (subject) du token nous avons mis l'ObjectID (identifiant MongoDB) de l'utilisateur, rappelez vous que nous ne devons pas mettre de données sensibles sinon nous devrions utiliser jwe qui permet le cryptage de ces données sensibles.
+ainsi le code de la partie jwtStrategy sera très similaire à celle de la stratégie locale, par contre nous ne fournissons plus les paramètres d'authentification, mais un token qui sera ajouté à toutes les requêtes, dans l'entête authorization, à partir de ce token, la stratégie pourra dans un premier temps valider le token puis en extraire l'utilisateur puisque dans le champs sub (subject) du token nous avons mis l'ObjectID (identifiant MongoDB) de l'utilisateur, rappelez vous que nous ne devons pas mettre de données sensibles sinon nous devrions utiliser jwe qui permet le cryptage de ces données sensibles.
 
 ```
 const passport = require('passport')
@@ -1262,7 +1261,7 @@ passport.use(jwtLogin)
 
 Un petit test nous permet de voir que cela fonctionne. Vous devez juste créer un utilisateur via l'endpoint signup en méthode POST, puis revenir vers l'endpoint /api en méthode GET, rajouter l'entête autorization et y coller le token reçu.
 
-Avec la commande cURL cela reviendrait a ceci:
+Avec la commande cURL cela reviendrait à ceci:
 `curl -X GET -H 'authorization: VOTRE_TOKEN' -i http://localhost:3000/api`
 
 Et voila notre serveur est fini!
