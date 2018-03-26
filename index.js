@@ -7,6 +7,7 @@ const path = require('path')
 const mongoose = require('mongoose')
 const app = express()
 
+
 const router = require('./router')
 
 /*
@@ -95,6 +96,8 @@ app.use(bodyParser.json({ type: '*/*' }))
 
 // Route and launching server
 router(app)
-const port = process.env.port || 3000
-app.listen(port, '127.0.0.1',  () => { console.log('-=-=Server listening on port 3000=-=-')})
+
+const port = process.env.port || 3001
+app.listen(port, '127.0.0.1',  _ => { console.log(`-=-=Server listening on port ${port}=-=-`) })
+
 
