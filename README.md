@@ -1270,7 +1270,7 @@ Avec la commande cURL cela reviendrait à ceci:
 
 **Une dernière chose**: en ce qui concerne l'extraction à partir d'un élement de la requête, si vous pouvez utilisez l'entête authorization alors la ligne suivante fera l'affaire:
 
-`jwtFromRequest2: ExtractJwt.fromHeader('authorization')`
+`jwtFromRequest: ExtractJwt.fromHeader('authorization')`
 
 Si vous avez l'obligation d'utiliser le champ "Authorization" (avec un A majuscule) alors la ligne suivante fera l'affaire à condition de mettre avant le token "Bearer " (avec l'espace finale)
 
