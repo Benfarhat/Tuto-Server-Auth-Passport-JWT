@@ -1224,6 +1224,8 @@ const jwtOptions = {
 
 ainsi le code de la partie jwtStrategy sera très similaire à celle de la stratégie locale, par contre nous ne fournissons plus les paramètres d'authentification, mais un token qui sera ajouté à toutes les requêtes, dans l'entête authorization, à partir de ce token, la stratégie pourra dans un premier temps valider le token puis en extraire l'utilisateur puisque dans le champs sub (subject) du token nous avons mis l'ObjectID (identifiant MongoDB) de l'utilisateur, rappelez vous que nous ne devons pas mettre de données sensibles sinon nous devrions utiliser jwe qui permet le cryptage de ces données sensibles.
 
+ATTENTION: Rappelez vous que Node.js modifiera les entêtes en minuscule afin d'éviter les confusions avec certains serveurs qui sont case-sensitive et d'autres case-insensitive. Ainsi `req.header('authorization')` et `req.header('authorization')` auront le même résutat. Pour notre serveur veillez juste a choisir un nom d'entête en minuscule.
+
 ```
 const passport = require('passport')
 const LocalStrategy = require('passport-local') 
@@ -1263,6 +1265,13 @@ Un petit test nous permet de voir que cela fonctionne. Vous devez juste créer u
 
 Avec la commande cURL cela reviendrait à ceci:
 `curl -X GET -H 'authorization: VOTRE_TOKEN' -i http://localhost:3000/api`
+
+
+> **Une dernière chose**: en ce qui concerne l'extraction à partir d'un élement de la requête, si vous pouvez utilisez l'entête authorization alors la ligne suivante fera l'affaire:
+>
+> `jwtFromRequest2: ExtractJwt.fromHeader('authorization')`
+> Si vous avez l'obligation d'utiliser le champ "Authorization" (avec un A majuscule) alors la ligne suivante fera l'affaire à condition de mettre avant le token "Bearer " (avec l'espace finale)
+> `jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()`
 
 Et voila notre serveur est fini!
 

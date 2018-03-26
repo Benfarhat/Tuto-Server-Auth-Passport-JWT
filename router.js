@@ -7,4 +7,5 @@ module.exports = app => {
     app.post('/signup',  Authentication.signup)
     app.post('/signin', passport.authenticate('local', { session: false }),  Authentication.signin)
     app.get('/api', passport.authenticate('jwt', { session: false }), (req, res) => res.send("Secured Area")) // Unauthorized
+    app.get('/test', (req, res) => {console.log(req.header('authorization')); res.end()})
 }

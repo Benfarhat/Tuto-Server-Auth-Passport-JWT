@@ -9,7 +9,11 @@ function generateToken(user){
 }
 
 exports.signin = (req, res, next) => {
-    res.send({ token: generateToken(req.user)})
+    res.send({ 
+        success:true,
+        message: `User ${req.user.username} authenticated`,
+        token: generateToken(req.user)
+    })
 }
 exports.signup = (req, res, next) => {
     const username = req.body.username
@@ -34,7 +38,10 @@ exports.signup = (req, res, next) => {
                 // Respond to request indicating the user was created
                 // res.json(user)
                 // res.json({ success: true, data: {username, password} })
-                res.send({ token: generateToken(user)})
+                res.send({ 
+                    success:true,
+                    message: `User ${username} saved`,
+                    token: generateToken(user)})
             })
         })
         // res.send({username, password})

@@ -31,7 +31,8 @@ const localLogin = new LocalStrategy((username, password, done) => {
 // jwtLogin
 const jwtOptions = {
     secretOrKey: config.secret,
-    jwtFromRequest: ExtractJwt.fromHeader('authorization')
+    //jwtFromRequest: ExtractJwt.fromHeader('authorization'), // if you want to use "authorization" header
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken() // just add "Bearer " Before the "Authorization" header
 }
 
 
